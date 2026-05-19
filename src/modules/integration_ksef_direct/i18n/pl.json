@@ -1,0 +1,18 @@
+{
+  "integration_ksef_direct.title": "KSeF Direct",
+  "integration_ksef_direct.description": "Bezpośrednia integracja z KSeF przez oficjalne API MF v2 bez pośrednika Exorigo/SmartKSeF.",
+  "integration_ksef_direct.health.connected": "Połączono",
+  "integration_ksef_direct.health.error": "Błąd połączenia",
+  "integration_ksef_direct.health.unconfigured": "Nieskonfigurowano",
+  "integration_ksef_direct.health.checking": "Sprawdzanie...",
+  "integration_ksef_direct.health.check_button": "Sprawdź połączenie",
+  "integration_ksef_direct.health.last_checked": "Ostatni check:",
+  "integration_ksef_direct.health.environment": "Środowisko:",
+  "integration_ksef_direct.health.rate_limits": "Rate limity:",
+  "integration_ksef_direct.health.never": "Nigdy",
+  "integration_ksef_direct.credentials.ksef_token": "Token KSeF",
+  "integration_ksef_direct.credentials.nip": "NIP",
+  "integration_ksef_direct.credentials.environment": "Środowisko",
+  "integration_ksef_direct.credentials.environment.test": "Test",
+  "integration_ksef_direct.credentials.environment.production": "Produkcja"
+}

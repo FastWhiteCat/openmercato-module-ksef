@@ -1,0 +1,18 @@
+{
+  "integration_ksef_direct.title": "KSeF Direct",
+  "integration_ksef_direct.description": "Direct integration with the Polish KSeF system via official MF API v2 without Exorigo/SmartKSeF middleware.",
+  "integration_ksef_direct.health.connected": "Connected",
+  "integration_ksef_direct.health.error": "Connection error",
+  "integration_ksef_direct.health.unconfigured": "Not configured",
+  "integration_ksef_direct.health.checking": "Checking...",
+  "integration_ksef_direct.health.check_button": "Check connection",
+  "integration_ksef_direct.health.last_checked": "Last check:",
+  "integration_ksef_direct.health.environment": "Environment:",
+  "integration_ksef_direct.health.rate_limits": "Rate limits:",
+  "integration_ksef_direct.health.never": "Never",
+  "integration_ksef_direct.credentials.ksef_token": "KSeF Token",
+  "integration_ksef_direct.credentials.nip": "NIP",
+  "integration_ksef_direct.credentials.environment": "Environment",
+  "integration_ksef_direct.credentials.environment.test": "Test",
+  "integration_ksef_direct.credentials.environment.production": "Production"
+}
