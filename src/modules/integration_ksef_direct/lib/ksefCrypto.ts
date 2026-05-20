@@ -24,39 +24,55 @@ interface PublicKeyCertificateEntry {
   usage?: string[]
 }
 
-export async function fetchPublicKey(environment: KsefEnvironment): Promise<string> {
-  const cached = PUBLIC_KEY_CACHE.get(environment)
-  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
-    return cached.publicKeyPem
-  }
-
+async function fetchCertificates(environment: KsefEnvironment): Promise<PublicKeyCertificateEntry[]> {
   const url = `${BASE_URLS[environment]}/security/public-key-certificates`
   const response = await fetch(url, {
     method: 'GET',
     headers: { 'Accept': 'application/json' },
     signal: AbortSignal.timeout(10_000),
   })
-
   if (!response.ok) {
-    throw new Error(`Failed to fetch KSeF public key: HTTP ${response.status}`)
+    throw new Error(`Failed to fetch KSeF public key certificates: HTTP ${response.status}`)
   }
-
   const data = await response.json() as PublicKeyCertificateEntry[]
   if (!Array.isArray(data)) {
     throw new Error('KSeF public key response is not an array')
   }
+  return data
+}
 
-  const tokenEncryptionCert = data.find(entry => entry.usage?.includes('KsefTokenEncryption'))
-  if (!tokenEncryptionCert?.certificate) {
-    throw new Error('KSeF public key response missing KsefTokenEncryption certificate')
+function certToPem(entry: PublicKeyCertificateEntry): string {
+  const derBuffer = Buffer.from(entry.certificate, 'base64')
+  const x509 = new crypto.X509Certificate(derBuffer)
+  return x509.publicKey.export({ type: 'spki', format: 'pem' }).toString()
+}
+
+export async function fetchPublicKey(environment: KsefEnvironment): Promise<string> {
+  const cached = PUBLIC_KEY_CACHE.get(environment)
+  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
+    return cached.publicKeyPem
   }
 
-  const derBuffer = Buffer.from(tokenEncryptionCert.certificate, 'base64')
-  const x509 = new crypto.X509Certificate(derBuffer)
-  const publicKeyPem = x509.publicKey.export({ type: 'spki', format: 'pem' }).toString()
-
+  const certs = await fetchCertificates(environment)
+  const tokenCert = certs.find(entry => entry.usage?.includes('KsefTokenEncryption'))
+  if (!tokenCert?.certificate) {
+    throw new Error('KSeF public key response missing KsefTokenEncryption certificate')
+  }
+  const publicKeyPem = certToPem(tokenCert)
   PUBLIC_KEY_CACHE.set(environment, { publicKeyPem, fetchedAt: Date.now() })
   return publicKeyPem
+}
+
+export async function fetchInvoicePublicKey(
+  environment: KsefEnvironment,
+): Promise<{ publicKeyPem: string; publicKeyId?: string }> {
+  const certs = await fetchCertificates(environment)
+  const invoiceCert = certs.find(entry => entry.usage?.includes('SymmetricKeyEncryption'))
+    ?? certs.find(entry => entry.usage?.includes('KsefTokenEncryption'))
+  if (!invoiceCert?.certificate) {
+    throw new Error('KSeF public key response missing invoice encryption certificate')
+  }
+  return { publicKeyPem: certToPem(invoiceCert), publicKeyId: invoiceCert.publicKeyId }
 }
 
 export function clearPublicKeyCache(environment?: KsefEnvironment): void {
@@ -84,5 +100,39 @@ export function generateSymmetricKey(): { key: Buffer; iv: Buffer } {
   return {
     key: crypto.randomBytes(32),
     iv: crypto.randomBytes(16),
+  }
+}
+
+export function prepareInvoicePayload(
+  xmlString: string,
+  publicKeyPem: string,
+): {
+  encryptedSymmetricKey: string
+  initializationVector: string
+  encryptedInvoiceContent: string
+  invoiceHash: string
+  invoiceSize: number
+  encryptedInvoiceHash: string
+  encryptedInvoiceSize: number
+} {
+  const { key, iv } = generateSymmetricKey()
+  const xmlBytes = Buffer.from(xmlString, 'utf-8')
+
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv)
+  const encryptedContent = Buffer.concat([cipher.update(xmlBytes), cipher.final()])
+
+  const encryptedSymmetricKey = crypto.publicEncrypt(
+    { key: publicKeyPem, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256' },
+    key,
+  )
+
+  return {
+    encryptedSymmetricKey: encryptedSymmetricKey.toString('base64'),
+    initializationVector: iv.toString('base64'),
+    encryptedInvoiceContent: encryptedContent.toString('base64'),
+    invoiceHash: crypto.createHash('sha256').update(xmlBytes).digest('base64'),
+    invoiceSize: xmlBytes.length,
+    encryptedInvoiceHash: crypto.createHash('sha256').update(encryptedContent).digest('base64'),
+    encryptedInvoiceSize: encryptedContent.length,
   }
 }

@@ -12,6 +12,7 @@ export interface KsefCredentials {
   ksefToken: string
   nip: string
   environment: KsefEnvironment
+  tenantId?: string
 }
 
 interface KsefTokenCache {
@@ -67,7 +68,7 @@ const RateLimitsSchema = z.object({
 export type KsefRateLimits = z.infer<typeof RateLimitsSchema>
 
 function cacheKey(credentials: KsefCredentials): string {
-  return `${credentials.environment}:${credentials.nip}`
+  return `${credentials.environment}:${credentials.tenantId ?? ''}:${credentials.nip}`
 }
 
 async function ksefFetch(url: string, options: RequestInit): Promise<Response> {
@@ -325,4 +326,141 @@ export class KsefNetworkError extends Error {
     super(message)
     this.name = 'KsefNetworkError'
   }
+}
+
+const OpenSessionResponseSchema = z.object({
+  referenceNumber: z.string(),
+  validUntil: z.string(),
+})
+
+const SendInvoiceToSessionResponseSchema = z.object({
+  referenceNumber: z.string(),
+})
+
+const SessionStatusResponseSchema = z.object({
+  status: z.object({
+    code: z.number(),
+    description: z.string(),
+    details: z.array(z.string()).optional().nullable(),
+  }),
+  successfulInvoiceCount: z.number().optional().nullable(),
+  failedInvoiceCount: z.number().optional().nullable(),
+}).passthrough()
+
+export async function sendInvoice(
+  credentials: KsefCredentials,
+  payload: {
+    encryptedSymmetricKey: string
+    initializationVector: string
+    encryptedInvoiceContent: string
+    invoiceHash: string
+    invoiceSize: number
+    encryptedInvoiceHash: string
+    encryptedInvoiceSize: number
+    publicKeyId?: string
+  },
+): Promise<{ sessionReferenceNumber: string; invoiceReferenceNumber: string }> {
+  const baseUrl = BASE_URLS[credentials.environment]
+  const accessToken = await getValidAccessToken(credentials)
+
+  const openRes = await ksefFetch(`${baseUrl}/sessions/online`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+    body: JSON.stringify({
+      formCode: { systemCode: 'FA (2)', schemaVersion: '1-0E', value: 'FA' },
+      encryption: {
+        encryptedSymmetricKey: payload.encryptedSymmetricKey,
+        initializationVector: payload.initializationVector,
+        ...(payload.publicKeyId ? { publicKeyId: payload.publicKeyId } : {}),
+      },
+    }),
+  })
+
+  if (!openRes.ok) {
+    const body = await openRes.text().catch(() => '')
+    throw new KsefNetworkError(`Session open failed: HTTP ${openRes.status}${body ? ` — ${body}` : ''}`)
+  }
+
+  const openData = OpenSessionResponseSchema.parse(await openRes.json())
+  const sessionReferenceNumber = openData.referenceNumber
+
+  let invoiceReferenceNumber: string
+  try {
+    const sendRes = await ksefFetch(
+      `${baseUrl}/sessions/online/${encodeURIComponent(sessionReferenceNumber)}/invoices`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          invoiceHash: payload.invoiceHash,
+          invoiceSize: payload.invoiceSize,
+          encryptedInvoiceHash: payload.encryptedInvoiceHash,
+          encryptedInvoiceSize: payload.encryptedInvoiceSize,
+          encryptedInvoiceContent: payload.encryptedInvoiceContent,
+        }),
+      },
+    )
+
+    if (!sendRes.ok) {
+      const body = await sendRes.text().catch(() => '')
+      throw new KsefNetworkError(`Invoice send failed: HTTP ${sendRes.status}${body ? ` — ${body}` : ''}`)
+    }
+
+    const sendData = SendInvoiceToSessionResponseSchema.parse(await sendRes.json())
+    invoiceReferenceNumber = sendData.referenceNumber
+  } catch (err) {
+    await ksefFetch(
+      `${baseUrl}/sessions/online/${encodeURIComponent(sessionReferenceNumber)}/close`,
+      { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}` } },
+    ).catch(() => {})
+    throw err
+  }
+
+  const closeRes = await ksefFetch(
+    `${baseUrl}/sessions/online/${encodeURIComponent(sessionReferenceNumber)}/close`,
+    { method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}` } },
+  )
+
+  if (!closeRes.ok && closeRes.status !== 204) {
+    const body = await closeRes.text().catch(() => '')
+    console.warn(`KSeF session close returned HTTP ${closeRes.status}${body ? `: ${body}` : ''}`)
+  }
+
+  return { sessionReferenceNumber, invoiceReferenceNumber }
+}
+
+export async function checkInvoiceStatus(
+  credentials: KsefCredentials,
+  referenceNumber: string,
+): Promise<{ processingCode: number; ksefReferenceNumber?: string; errorDescription?: string }> {
+  const baseUrl = BASE_URLS[credentials.environment]
+  const accessToken = await getValidAccessToken(credentials)
+
+  const res = await ksefFetch(`${baseUrl}/sessions/${encodeURIComponent(referenceNumber)}`, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+  })
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new KsefNetworkError(`Session status check failed: HTTP ${res.status}${body ? ` — ${body}` : ''}`)
+  }
+
+  const data = SessionStatusResponseSchema.parse(await res.json())
+  const code = data.status.code
+
+  if (code === 200) {
+    if ((data.failedInvoiceCount ?? 0) > 0) {
+      const details = data.status.details?.join('; ') ?? ''
+      return { processingCode: 400, errorDescription: `KSeF rejected ${data.failedInvoiceCount} invoice(s): ${data.status.description}${details ? ` — ${details}` : ''}` }
+    }
+    return { processingCode: 200 }
+  }
+
+  if (code >= 400) {
+    const details = data.status.details?.join('; ') ?? ''
+    return { processingCode: code, errorDescription: `${data.status.description}${details ? ` — ${details}` : ''}` }
+  }
+
+  return { processingCode: 100 }
 }
