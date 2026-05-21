@@ -74,14 +74,15 @@ function cacheKey(credentials: KsefCredentials): string {
 async function ksefFetch(url: string, options: RequestInit): Promise<Response> {
   const response = await fetch(url, {
     ...options,
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(15_000),
   })
 
   if (response.status === 429) {
     const retryAfter = response.headers.get('Retry-After')
-    const waitMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : 2000
+    const waitMs = Math.min(retryAfter ? parseInt(retryAfter, 10) * 1000 : 2000, 10_000)
+    console.log(`[ksef] 429 rate-limit, waiting ${waitMs}ms before retry`)
     await new Promise((resolve) => setTimeout(resolve, waitMs))
-    return fetch(url, { ...options, signal: AbortSignal.timeout(10_000) })
+    return fetch(url, { ...options, signal: AbortSignal.timeout(15_000) })
   }
 
   return response
@@ -115,13 +116,17 @@ async function getValidAccessToken(credentials: KsefCredentials): Promise<string
 async function authenticate(credentials: KsefCredentials): Promise<string> {
   const baseUrl = BASE_URLS[credentials.environment]
 
+  console.log('[ksef-auth] fetchPublicKey...')
   const publicKeyPem = await fetchPublicKey(credentials.environment)
+  console.log('[ksef-auth] publicKey fetched')
 
+  console.log('[ksef-auth] POST /auth/challenge...')
   const challengeRes = await ksefFetch(`${baseUrl}/auth/challenge`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({}),
   })
+  console.log('[ksef-auth] challenge status:', challengeRes.status)
   if (!challengeRes.ok) {
     throw new KsefAuthError(`Challenge request failed: HTTP ${challengeRes.status}`, 'AUTH_CHALLENGE_FAILED')
   }
@@ -137,6 +142,7 @@ async function authenticate(credentials: KsefCredentials): Promise<string> {
     encryptedToken = encryptKsefToken(credentials.ksefToken, timestampMs, freshKey)
   }
 
+  console.log('[ksef-auth] POST /auth/ksef-token...')
   const ksefTokenRes = await ksefFetch(`${baseUrl}/auth/ksef-token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -156,11 +162,14 @@ async function authenticate(credentials: KsefCredentials): Promise<string> {
   const tokenData = KsefTokenResponseSchema.parse(await ksefTokenRes.json())
   const authToken = tokenData.authenticationToken.token
 
+  console.log('[ksef-auth] pollAuthStatus...')
   const authStatusData = await pollAuthStatus(baseUrl, tokenData.referenceNumber, authToken)
+  console.log('[ksef-auth] pollAuthStatus done:', authStatusData)
   if (!authStatusData) {
     throw new KsefAuthError('Authentication timed out waiting for KSeF status', 'AUTH_TIMEOUT')
   }
 
+  console.log('[ksef-auth] POST /auth/token/redeem...')
   const redeemRes = await ksefFetch(`${baseUrl}/auth/token/redeem`, {
     method: 'POST',
     headers: {
@@ -427,6 +436,227 @@ export async function sendInvoice(
   }
 
   return { sessionReferenceNumber, invoiceReferenceNumber }
+}
+
+export interface KsefReceivedInvoiceSummary {
+  ksefReferenceNumber: string
+  sessionReferenceNumber: string
+  issueDate: string | null
+  sellerNip: string | null
+  sellerName: string | null
+  grossAmount: string | null
+  netAmount: string | null
+  vatAmount: string | null
+  currency: string | null
+  invoiceNumber: string | null
+  upoDownloadUrl: string | null
+  invoiceDownloadUrl: string | null
+}
+
+const SessionListResponseSchema = z.object({
+  sessions: z.array(z.object({
+    referenceNumber: z.string(),
+  }).passthrough()).default([]),
+  continuationToken: z.string().nullable().optional(),
+}).passthrough()
+
+const SessionInvoiceItemSchema = z.object({
+  referenceNumber: z.string().optional(),
+  ksefNumber: z.string().optional(),
+  ksefReferenceNumber: z.string().optional(),
+  issueDate: z.string().nullable().optional(),
+  subjectBy: z.object({
+    identifier: z.object({
+      type: z.string().optional(),
+      identifier: z.string().optional(),
+    }).optional(),
+    name: z.string().optional(),
+  }).passthrough().optional(),
+  grossAmount: z.union([z.string(), z.number()]).nullable().optional(),
+  netAmount: z.union([z.string(), z.number()]).nullable().optional(),
+  vatAmount: z.union([z.string(), z.number()]).nullable().optional(),
+  currency: z.string().nullable().optional(),
+  invoiceNumber: z.string().nullable().optional(),
+  upoDownloadUrl: z.string().nullable().optional(),
+  invoiceDownloadUrl: z.string().nullable().optional(),
+}).passthrough()
+
+const SessionInvoiceListResponseSchema = z.object({
+  invoices: z.array(SessionInvoiceItemSchema).default([]),
+  continuationToken: z.string().nullable().optional(),
+}).passthrough()
+
+async function fetchAllSessionInvoices(
+  baseUrl: string,
+  accessToken: string,
+  sessionRef: string,
+): Promise<KsefReceivedInvoiceSummary[]> {
+  const results: KsefReceivedInvoiceSummary[] = []
+  let continuationToken: string | null | undefined = undefined
+  let isFirst = true
+
+  while (isFirst || continuationToken) {
+    isFirst = false
+    const url = new URL(`${baseUrl}/sessions/${encodeURIComponent(sessionRef)}/invoices`)
+    if (continuationToken) url.searchParams.set('continuationToken', continuationToken)
+
+    console.log('[ksef-receive] GET session invoices:', url.pathname)
+    const res = await ksefFetch(url.toString(), {
+      method: 'GET',
+      headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+    })
+    console.log('[ksef-receive] session invoices response:', res.status)
+
+    if (!res.ok) break
+
+    const data = SessionInvoiceListResponseSchema.parse(await res.json())
+    continuationToken = data.continuationToken ?? null
+
+    for (const inv of data.invoices) {
+      const ksefRef = inv.ksefNumber ?? inv.ksefReferenceNumber
+      if (!ksefRef) continue
+      const grossRaw = inv.grossAmount
+      const netRaw = inv.netAmount
+      const vatRaw = inv.vatAmount
+      results.push({
+        ksefReferenceNumber: ksefRef,
+        sessionReferenceNumber: sessionRef,
+        issueDate: inv.issueDate ?? null,
+        sellerNip: inv.subjectBy?.identifier?.identifier ?? null,
+        sellerName: inv.subjectBy?.name ?? null,
+        grossAmount: grossRaw != null ? String(grossRaw) : null,
+        netAmount: netRaw != null ? String(netRaw) : null,
+        vatAmount: vatRaw != null ? String(vatRaw) : null,
+        currency: inv.currency ?? null,
+        invoiceNumber: inv.invoiceNumber ?? null,
+        upoDownloadUrl: inv.upoDownloadUrl ?? null,
+        invoiceDownloadUrl: inv.invoiceDownloadUrl ?? null,
+      })
+    }
+
+    if (!continuationToken) break
+  }
+
+  return results
+}
+
+export async function queryReceivedInvoices(
+  credentials: KsefCredentials,
+  params: {
+    dateFrom: string
+    dateTo: string
+  },
+): Promise<{ items: KsefReceivedInvoiceSummary[]; totalCount: number }> {
+  console.log('[ksef-receive] queryReceivedInvoices start')
+  const baseUrl = BASE_URLS[credentials.environment]
+  console.log('[ksef-receive] getValidAccessToken...')
+  const accessToken = await getValidAccessToken(credentials)
+  console.log('[ksef-receive] accessToken obtained')
+  const allItems: KsefReceivedInvoiceSummary[] = []
+
+  let continuationToken: string | null | undefined = undefined
+  let isFirst = true
+
+  while (isFirst || continuationToken) {
+    isFirst = false
+    const sessionUrl = new URL(`${baseUrl}/sessions`)
+    sessionUrl.searchParams.set('sessionType', 'online')
+    sessionUrl.searchParams.set('direction', 'received')
+    sessionUrl.searchParams.set('dateFrom', params.dateFrom)
+    sessionUrl.searchParams.set('dateTo', params.dateTo)
+    if (continuationToken) sessionUrl.searchParams.set('continuationToken', continuationToken)
+
+    console.log('[ksef-receive] GET sessions:', sessionUrl.toString())
+    const res = await ksefFetch(sessionUrl.toString(), {
+      method: 'GET',
+      headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+    })
+    console.log('[ksef-receive] sessions response status:', res.status)
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => '')
+      throw new KsefNetworkError(`Query received sessions failed: HTTP ${res.status}${body ? ` — ${body}` : ''}`)
+    }
+
+    const sessionData = SessionListResponseSchema.parse(await res.json())
+    continuationToken = sessionData.continuationToken ?? null
+    console.log('[ksef-receive] sessions count:', sessionData.sessions.length, 'continuationToken:', continuationToken)
+
+    for (const session of sessionData.sessions) {
+      console.log('[ksef-receive] fetching invoices for session:', session.referenceNumber)
+      const invoices = await fetchAllSessionInvoices(baseUrl, accessToken, session.referenceNumber)
+      console.log('[ksef-receive] session invoices:', invoices.length)
+      allItems.push(...invoices)
+    }
+
+    if (!continuationToken) break
+  }
+
+  console.log('[ksef-receive] total items:', allItems.length)
+  return { items: allItems, totalCount: allItems.length }
+}
+
+async function downloadFromUrl(url: string): Promise<string> {
+  const res = await fetch(url, {
+    method: 'GET',
+    signal: AbortSignal.timeout(30_000),
+  })
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new KsefNetworkError(`Invoice download failed: HTTP ${res.status}${body ? ` — ${body}` : ''}`)
+  }
+
+  return res.text()
+}
+
+export async function downloadInvoiceFromUrl(url: string): Promise<string> {
+  return downloadFromUrl(url)
+}
+
+export async function downloadInvoice(
+  credentials: KsefCredentials,
+  ksefReferenceNumber: string,
+): Promise<{ rawContent: string; upoDownloadUrl: string | null; invoiceDownloadUrl: string | null }> {
+  const baseUrl = BASE_URLS[credentials.environment]
+  const accessToken = await getValidAccessToken(credentials)
+
+  console.log(`[ksef-fetch] GET /invoices/ksef/${ksefReferenceNumber}`)
+  const res = await ksefFetch(`${baseUrl}/invoices/ksef/${encodeURIComponent(ksefReferenceNumber)}`, {
+    method: 'GET',
+    headers: { 'Accept': 'application/octet-stream', 'Authorization': `Bearer ${accessToken}` },
+  })
+
+  console.log(`[ksef-fetch] response status: ${res.status}, content-type: ${res.headers.get('content-type')}`)
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new KsefNetworkError(`Invoice fetch failed: HTTP ${res.status}${body ? ` — ${body}` : ''}`)
+  }
+
+  const contentType = res.headers.get('content-type') ?? ''
+  let rawContent: string
+
+  if (contentType.includes('application/json')) {
+    const data = await res.json() as Record<string, unknown>
+    console.log(`[ksef-fetch] JSON response keys: ${Object.keys(data).join(', ')}`)
+    const downloadUrl = (data['invoiceDownloadUrl'] ?? data['downloadUrl'] ?? data['url']) as string | undefined
+    if (downloadUrl) {
+      rawContent = await downloadFromUrl(downloadUrl)
+    } else if (typeof data['content'] === 'string') {
+      rawContent = data['content'] as string
+    } else {
+      throw new KsefNetworkError(`Unexpected JSON response from /invoices/ksef — keys: ${Object.keys(data).join(', ')}`)
+    }
+    return {
+      rawContent,
+      upoDownloadUrl: (data['upoDownloadUrl'] as string | undefined) ?? null,
+      invoiceDownloadUrl: (data['invoiceDownloadUrl'] as string | undefined) ?? null,
+    }
+  }
+
+  rawContent = await res.text()
+  return { rawContent, upoDownloadUrl: null, invoiceDownloadUrl: null }
 }
 
 export async function checkInvoiceStatus(

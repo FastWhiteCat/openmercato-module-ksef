@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from 'react'
+import Link from 'next/link'
 import { Plus, Send, RefreshCw } from 'lucide-react'
 import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { DataTable } from '@open-mercato/ui/backend/DataTable'
@@ -12,6 +13,7 @@ import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { useGuardedMutation } from '@open-mercato/ui/backend/injection/useGuardedMutation'
 import { useOrganizationScopeVersion } from '@open-mercato/shared/lib/frontend/useOrganizationScope'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
+import { useAppEvent } from '@open-mercato/ui/backend/injection/useAppEvent'
 
 const PAGE_SIZE = 50
 
@@ -25,14 +27,6 @@ const STATUS_VARIANT: Record<string, 'success' | 'error' | 'warning' | 'neutral'
 
 export const pageMetadata = {
   features: ['integration_ksef_direct.documents.view'],
-  actions: [
-    {
-      id: 'new',
-      label: 'New Document',
-      href: '/backend/integration-ksef-direct/documents/new',
-      icon: Plus,
-    },
-  ],
 }
 
 type DocumentRow = {
@@ -95,6 +89,8 @@ export default function KsefDirectDocumentsPage() {
   }, [page])
 
   React.useEffect(() => { void fetchData() }, [fetchData, scopeVersion])
+
+  useAppEvent('ksef_direct.document.*', () => { void fetchData() }, [fetchData])
 
   const handleSend = React.useCallback(async (documentId: string) => {
     setSendingId(documentId)
@@ -220,6 +216,14 @@ export default function KsefDirectDocumentsPage() {
           columns={columns}
           data={rows}
           isLoading={isLoading}
+          actions={(
+            <Button asChild>
+              <Link href="/backend/integration-ksef-direct/documents/new">
+                <Plus className="h-4 w-4 mr-2" />
+                {t('integration_ksef_direct.documents.list.actions.new', 'New Document')}
+              </Link>
+            </Button>
+          )}
           emptyTitle={t('integration_ksef_direct.documents.empty.title', 'No KSeF documents yet')}
           emptyDescription={t('integration_ksef_direct.documents.empty.description', 'Add your first document manually or configure KSeF sync.')}
           pagination={{ page, pageSize: PAGE_SIZE, total, totalPages, onPageChange: setPage }}

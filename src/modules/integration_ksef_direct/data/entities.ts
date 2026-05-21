@@ -96,6 +96,72 @@ export class KsefDirectDocument {
   updatedAt: Date = new Date()
 }
 
+@Entity({ tableName: 'ksef_direct_received_documents' })
+@Index({ properties: ['organizationId', 'tenantId'] })
+@Index({ properties: ['organizationId', 'tenantId', 'status'] })
+@Unique({ properties: ['organizationId', 'ksefReferenceNumber'] })
+export class KsefDirectReceivedDocument {
+  @PrimaryKey({ type: 'uuid', defaultRaw: 'gen_random_uuid()' })
+  id!: string
+
+  @Property({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string
+
+  @Property({ name: 'tenant_id', type: 'uuid' })
+  tenantId!: string
+
+  @Property({ name: 'ksef_reference_number', type: 'text' })
+  ksefReferenceNumber!: string
+
+  @Property({ name: 'raw_xml', type: 'text', nullable: true })
+  rawXml?: string | null
+
+  @Property({ name: 'invoice_number', type: 'text', nullable: true })
+  invoiceNumber?: string | null
+
+  @Property({ name: 'seller_nip', type: 'text', nullable: true })
+  sellerNip?: string | null
+
+  @Property({ name: 'seller_name', type: 'text', nullable: true })
+  sellerName?: string | null
+
+  @Property({ name: 'issue_date', type: 'string', columnType: 'date', nullable: true })
+  issueDate?: string | null
+
+  @Property({ name: 'currency', type: 'text', nullable: true })
+  currency?: string | null
+
+  @Property({ name: 'net_amount', type: 'string', columnType: 'numeric(15,2)', nullable: true })
+  netAmount?: string | null
+
+  @Property({ name: 'vat_amount', type: 'string', columnType: 'numeric(15,2)', nullable: true })
+  vatAmount?: string | null
+
+  @Property({ name: 'gross_amount', type: 'string', columnType: 'numeric(15,2)', nullable: true })
+  grossAmount?: string | null
+
+  @Property({ name: 'status', type: 'text', default: 'pending_download' })
+  status: 'pending_download' | 'downloaded' | 'failed' = 'pending_download'
+
+  @Property({ name: 'error_message', type: 'text', nullable: true })
+  errorMessage?: string | null
+
+  @Property({ name: 'upo_download_url', type: 'text', nullable: true })
+  upoDownloadUrl?: string | null
+
+  @Property({ name: 'invoice_download_url', type: 'text', nullable: true })
+  invoiceDownloadUrl?: string | null
+
+  @Property({ name: 'synced_at', type: Date, nullable: true })
+  syncedAt?: Date | null
+
+  @Property({ name: 'created_at', type: Date })
+  createdAt: Date = new Date()
+
+  @Property({ name: 'updated_at', type: Date, onUpdate: () => new Date() })
+  updatedAt: Date = new Date()
+}
+
 @Entity({ tableName: 'ksef_direct_connections' })
 @Index({ properties: ['status', 'updatedAt'] })
 @Unique({ properties: ['organizationId', 'tenantId'] })

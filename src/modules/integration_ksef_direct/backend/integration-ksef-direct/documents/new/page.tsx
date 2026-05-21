@@ -2,19 +2,20 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { Page, PageBody } from '@open-mercato/ui/backend/Page'
-import { SectionHeader, CollapsibleSection } from '@open-mercato/ui/backend/SectionHeader'
+import { SectionHeader } from '@open-mercato/ui/backend/SectionHeader'
 import { FormField } from '@open-mercato/ui/primitives/form-field'
 import { Button } from '@open-mercato/ui/primitives/button'
 import { IconButton } from '@open-mercato/ui/primitives/icon-button'
 import { Alert, AlertDescription } from '@open-mercato/ui/primitives/alert'
+import { Spinner } from '@open-mercato/ui/primitives/spinner'
 import { flash } from '@open-mercato/ui/backend/FlashMessages'
 import { apiCall } from '@open-mercato/ui/backend/utils/apiCall'
 import { useGuardedMutation } from '@open-mercato/ui/backend/injection/useGuardedMutation'
 import { useT } from '@open-mercato/shared/lib/i18n/context'
 
-export const pageMetadata = { features: ['integration_ksef_direct.documents.create'] }
+export const pageMetadata = { features: ['integration_ksef_direct.documents.create'], navHidden: true }
 
 const VAT_RATES = ['0', '5', '8', '23', 'ZW', 'NP'] as const
 const CURRENCIES = ['PLN', 'EUR', 'USD', 'GBP'] as const
@@ -65,7 +66,9 @@ export default function NewKsefDirectDocumentPage() {
   const [currency, setCurrency] = React.useState('PLN')
   const [lineItems, setLineItems] = React.useState<LineItemState[]>([emptyLine()])
   const [notes, setNotes] = React.useState('')
+  const [sellerNip, setSellerNip] = React.useState<string | null>(null)
   const [sellerName, setSellerName] = React.useState('')
+  const [isGeneratingNumber, setIsGeneratingNumber] = React.useState(false)
   const [sellerAddressL1, setSellerAddressL1] = React.useState('')
   const [sellerCity, setSellerCity] = React.useState('')
   const [sellerCountry, setSellerCountry] = React.useState('PL')
@@ -75,6 +78,20 @@ export default function NewKsefDirectDocumentPage() {
   const { runMutation } = useGuardedMutation<{ entityType: string }>({
     contextId: 'integration_ksef_direct:new-document',
   })
+
+  React.useEffect(() => {
+    apiCall('/api/integration-ksef-direct/seller-info')
+      .then((res) => {
+        if (!res.ok) return
+        const data = res.result as { sellerNip: string | null; sellerName: string | null }
+        if (data.sellerNip !== undefined) setSellerNip(data.sellerNip)
+        if (data.sellerName && !sellerName) setSellerName(data.sellerName)
+      })
+      .catch(() => {
+        flash(t('integration_ksef_direct.documents.form.seller_info_error', 'Failed to load seller info'), 'error')
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const totals = React.useMemo(() => computeTotals(lineItems), [lineItems])
 
@@ -104,8 +121,29 @@ export default function NewKsefDirectDocumentPage() {
     setLineItems((prev) => prev.map((item, i) => i === index ? { ...item, [field]: value } : item))
   }
 
+  async function handleGenerateNumber() {
+    setIsGeneratingNumber(true)
+    try {
+      const result = await apiCall('/api/integration-ksef-direct/invoice-numbers', { method: 'POST' })
+      if (result.ok) {
+        const data = result.result as { number: string }
+        setInvoiceNumber(data.number)
+      } else {
+        flash(t('integration_ksef_direct.documents.form.generate_number_error', 'Failed to generate invoice number'), 'error')
+      }
+    } catch {
+      flash(t('integration_ksef_direct.documents.form.generate_number_error', 'Failed to generate invoice number'), 'error')
+    } finally {
+      setIsGeneratingNumber(false)
+    }
+  }
+
   async function handleSubmit() {
     setSubmitError(null)
+    if (!sellerAddressL1.trim() || !sellerCity.trim()) {
+      setSubmitError(t('integration_ksef_direct.documents.form.error_seller_address_required', 'Seller street and city are required.'))
+      return
+    }
     setIsMutating(true)
     const body = {
       buyerNip,
@@ -123,8 +161,8 @@ export default function NewKsefDirectDocumentPage() {
       })),
       notes: notes || undefined,
       sellerName: sellerName || undefined,
-      sellerAddressL1: sellerAddressL1 || undefined,
-      sellerCity: sellerCity || undefined,
+      sellerAddressL1,
+      sellerCity,
       sellerCountry: sellerCountry || undefined,
     }
 
@@ -192,12 +230,27 @@ export default function NewKsefDirectDocumentPage() {
         <SectionHeader title={t('integration_ksef_direct.documents.form.section.invoice', 'Invoice Details')} />
         <div className="grid grid-cols-2 gap-4 mb-6">
           <FormField label={t('integration_ksef_direct.documents.form.invoice_number', 'Invoice Number')} required>
-            <input
-              type="text"
-              className="w-full border border-input rounded-md px-3 py-2 text-sm"
-              value={invoiceNumber}
-              onChange={(e) => setInvoiceNumber(e.target.value)}
-            />
+            <div className="flex gap-2 items-center">
+              <input
+                type="text"
+                className="flex-1 border border-input rounded-md px-3 py-2 text-sm"
+                value={invoiceNumber}
+                onChange={(e) => setInvoiceNumber(e.target.value)}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void handleGenerateNumber()}
+                disabled={isGeneratingNumber}
+                className="shrink-0"
+              >
+                {isGeneratingNumber
+                  ? <><Spinner className="size-4 mr-2" />{t('integration_ksef_direct.documents.form.generating', 'Generating...')}</>
+                  : <><RefreshCw className="size-4 mr-2" aria-hidden />{t('integration_ksef_direct.documents.form.generate_number', 'Generate number')}</>
+                }
+              </Button>
+            </div>
           </FormField>
           <FormField label={t('integration_ksef_direct.documents.form.currency', 'Currency')}>
             <select
@@ -337,7 +390,16 @@ export default function NewKsefDirectDocumentPage() {
         </div>
 
         <SectionHeader title={t('integration_ksef_direct.documents.form.section.seller', 'Seller')} className="mt-6" />
-        <div className="mb-4">
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <FormField label={t('integration_ksef_direct.documents.form.seller_nip', 'Seller NIP')}>
+            <input
+              type="text"
+              disabled
+              className="w-full border border-input rounded-md px-3 py-2 text-sm bg-muted text-muted-foreground cursor-not-allowed"
+              value={sellerNip ?? ''}
+              placeholder={sellerNip === null ? t('integration_ksef_direct.documents.form.seller_nip_placeholder', 'KSeF not configured') : ''}
+            />
+          </FormField>
           <FormField label={t('integration_ksef_direct.documents.form.seller_name', 'Seller Name')} required>
             <input
               type="text"
@@ -349,38 +411,37 @@ export default function NewKsefDirectDocumentPage() {
           </FormField>
         </div>
 
-        <CollapsibleSection title={t('integration_ksef_direct.documents.form.section.seller_address', 'Seller Address (optional)')} className="mb-6">
-          <div className="grid grid-cols-2 gap-4 pt-3">
-            <FormField label={t('integration_ksef_direct.documents.form.seller_address_l1', 'Street and number')}>
-              <input
-                type="text"
-                className="w-full border border-input rounded-md px-3 py-2 text-sm"
-                value={sellerAddressL1}
-                onChange={(e) => setSellerAddressL1(e.target.value)}
-                maxLength={512}
-              />
-            </FormField>
-            <FormField label={t('integration_ksef_direct.documents.form.seller_city', 'City')}>
-              <input
-                type="text"
-                className="w-full border border-input rounded-md px-3 py-2 text-sm"
-                value={sellerCity}
-                onChange={(e) => setSellerCity(e.target.value)}
-                maxLength={256}
-              />
-            </FormField>
-            <FormField label={t('integration_ksef_direct.documents.form.seller_country', 'Country')}>
-              <input
-                type="text"
-                className="w-full border border-input rounded-md px-3 py-2 text-sm"
-                value={sellerCountry}
-                onChange={(e) => setSellerCountry(e.target.value)}
-                maxLength={2}
-                placeholder="PL"
-              />
-            </FormField>
-          </div>
-        </CollapsibleSection>
+        <SectionHeader title={t('integration_ksef_direct.documents.form.section.seller_address', 'Seller Address')} className="mt-0" />
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <FormField label={t('integration_ksef_direct.documents.form.seller_address_l1', 'Street and number')} required>
+            <input
+              type="text"
+              className="w-full border border-input rounded-md px-3 py-2 text-sm"
+              value={sellerAddressL1}
+              onChange={(e) => setSellerAddressL1(e.target.value)}
+              maxLength={512}
+            />
+          </FormField>
+          <FormField label={t('integration_ksef_direct.documents.form.seller_city', 'City')} required>
+            <input
+              type="text"
+              className="w-full border border-input rounded-md px-3 py-2 text-sm"
+              value={sellerCity}
+              onChange={(e) => setSellerCity(e.target.value)}
+              maxLength={256}
+            />
+          </FormField>
+          <FormField label={t('integration_ksef_direct.documents.form.seller_country', 'Country')}>
+            <input
+              type="text"
+              className="w-full border border-input rounded-md px-3 py-2 text-sm"
+              value={sellerCountry}
+              onChange={(e) => setSellerCountry(e.target.value)}
+              maxLength={2}
+              placeholder="PL"
+            />
+          </FormField>
+        </div>
 
         <FormField label={t('integration_ksef_direct.documents.form.notes', 'Notes')} className="mb-6">
           <textarea

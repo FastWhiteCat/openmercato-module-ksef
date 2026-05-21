@@ -1,6 +1,8 @@
 "use client"
 
 import * as React from 'react'
+import Link from 'next/link'
+import { FileText, Inbox } from 'lucide-react'
 import { Page, PageBody } from '@open-mercato/ui/backend/Page'
 import { SectionHeader } from '@open-mercato/ui/backend/SectionHeader'
 import { Button } from '@open-mercato/ui/primitives/button'
@@ -100,6 +102,27 @@ export default function KsefDirectPage() {
 
         {isLoading && !state && <LoadingMessage />}
         {fetchError && !isLoading && <ErrorMessage message={fetchError} />}
+
+        <div className="grid grid-cols-2 gap-3 mt-2 mb-6">
+          <Link href="/backend/integration-ksef-direct/documents">
+            <div className="flex items-center gap-3 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors cursor-pointer">
+              <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+              <div>
+                <p className="text-sm font-medium">{t('integration_ksef_direct.nav.documents', 'Sent Documents')}</p>
+                <p className="text-xs text-muted-foreground">{t('integration_ksef_direct.nav.documents_desc', 'Outgoing invoices sent to KSeF')}</p>
+              </div>
+            </div>
+          </Link>
+          <Link href="/backend/integration-ksef-direct/received-documents">
+            <div className="flex items-center gap-3 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors cursor-pointer">
+              <Inbox className="h-5 w-5 text-muted-foreground shrink-0" />
+              <div>
+                <p className="text-sm font-medium">{t('integration_ksef_direct.nav.received_documents', 'Received Documents')}</p>
+                <p className="text-xs text-muted-foreground">{t('integration_ksef_direct.nav.received_documents_desc', 'Invoices received from KSeF')}</p>
+              </div>
+            </div>
+          </Link>
+        </div>
 
         {state && (
           <div className="space-y-4">
