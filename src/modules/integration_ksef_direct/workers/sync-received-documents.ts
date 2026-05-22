@@ -20,28 +20,20 @@ export default async function handler(
   ctx: HandlerContext,
 ): Promise<void> {
   const payload = job.payload
-  console.log('[ksef-receive] handler start', { jobId: job.id, dateFrom: payload.dateFrom, dateTo: payload.dateTo })
 
-  console.log('[ksef-receive] resolving em...')
   const em = (ctx.resolve('em') as { fork: () => unknown })?.fork() as any
-  if (!em) { console.log('[ksef-receive] em is null, returning'); return }
-  console.log('[ksef-receive] em forked OK')
+  if (!em) return
 
-  console.log('[ksef-receive] resolving credentialsService...')
   const credentialsService = ctx.resolve('integrationCredentialsService') as any
-  console.log('[ksef-receive] credentialsService resolved, fetching creds...')
   const rawCreds = credentialsService
     ? await credentialsService.resolve('integration_ksef_direct', {
         tenantId: payload.tenantId,
         organizationId: payload.organizationId,
       })
     : null
-  console.log('[ksef-receive] creds fetched, rawCreds is', rawCreds ? 'non-null' : 'null')
-
   const { KsefDirectCredentialsSchema } = await import('../data/validators')
   const credsParsed = KsefDirectCredentialsSchema.safeParse(rawCreds)
-  if (!credsParsed.success) { console.log('[ksef-receive] creds parse failed:', credsParsed.error.message); return }
-  console.log('[ksef-receive] creds parsed OK, environment:', credsParsed.data.environment)
+  if (!credsParsed.success) return
 
   const credentials = {
     ksefToken: credsParsed.data.ksef_token,
@@ -55,19 +47,11 @@ export default async function handler(
   const { parseReceivedInvoiceXml } = await import('../lib/ksefXmlParser')
   const { emitKsefDirectEvent } = await import('../events')
 
-  console.log('[ksef-receive] calling queryReceivedInvoices...')
   // Phase 1: enumerate all received invoices for the date range and upsert summaries
-  let result: { items: Awaited<ReturnType<typeof queryReceivedInvoices>>['items']; totalCount: number }
-  try {
-    result = await queryReceivedInvoices(credentials, {
-      dateFrom: payload.dateFrom,
-      dateTo: payload.dateTo,
-    })
-  } catch (err) {
-    console.error('[ksef-receive] queryReceivedInvoices FAILED:', err instanceof Error ? err.message : String(err))
-    throw err
-  }
-  console.log('[ksef-receive] queryReceivedInvoices returned', result.items.length, 'items')
+  const result = await queryReceivedInvoices(credentials, {
+    dateFrom: payload.dateFrom,
+    dateTo: payload.dateTo,
+  })
 
   const collectedRefs: string[] = []
 
@@ -111,9 +95,7 @@ export default async function handler(
 
   await em.flush()
 
-  console.log('[ksef-receive] collectedRefs:', collectedRefs.length)
   if (collectedRefs.length === 0) {
-    console.log('[ksef-receive] no refs, emitting synced event...')
     await emitKsefDirectEvent('ksef_direct.received_document.synced', {
       organizationId: payload.organizationId,
       tenantId: payload.tenantId,
