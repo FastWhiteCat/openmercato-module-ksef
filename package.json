@@ -75,6 +75,12 @@
     "ts-jest": "^29.4.6",
     "typescript": "^5.9.3"
   },
+  "open-mercato": {
+    "displayName": "KSeF Direct Integration",
+    "ejectable": true,
+    "testedCoreRange": ">=0.6.2 <0.7.0",
+    "upgradeNotesUrl": "https://github.com/FastWhiteCat/openmercato-module-ksef/releases"
+  },
   "files": [
     "dist",
     "src"
