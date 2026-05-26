@@ -224,8 +224,7 @@ export default function KsefDirectDocumentsPage() {
               </Link>
             </Button>
           )}
-          emptyTitle={t('integration_ksef_direct.documents.empty.title', 'No KSeF documents yet')}
-          emptyDescription={t('integration_ksef_direct.documents.empty.description', 'Add your first document manually or configure KSeF sync.')}
+          emptyState={t('integration_ksef_direct.documents.empty.title', 'No KSeF documents yet')}
           pagination={{ page, pageSize: PAGE_SIZE, total, totalPages, onPageChange: setPage }}
         />
       </PageBody>

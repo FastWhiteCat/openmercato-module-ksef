@@ -103,7 +103,7 @@ function DetailModal({
   }
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+    <Dialog open onOpenChange={(open: boolean) => { if (!open) onClose() }}>
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
@@ -238,7 +238,7 @@ function FetchDialog({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
   }
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+    <Dialog open onOpenChange={(open: boolean) => { if (!open) onClose() }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{t('integration_ksef_direct.received_documents.dialog_fetch.title', 'Fetch Document by KSeF Reference')}</DialogTitle>
@@ -253,7 +253,7 @@ function FetchDialog({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
           <FormField label={t('integration_ksef_direct.received_documents.column.ksef_reference', 'KSeF Reference Number')} required>
             <Input
               value={reference}
-              onChange={(e) => setReference(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setReference(e.target.value)}
               placeholder="e.g. 1234567890..."
               className="font-mono"
             />
