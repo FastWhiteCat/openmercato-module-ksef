@@ -100,8 +100,8 @@ export default function KsefDirectPage() {
       <PageBody>
         <SectionHeader title={t('integration_ksef_direct.title', 'KSeF Direct Integration')} />
 
-        {isLoading && !state && <LoadingMessage />}
-        {fetchError && !isLoading && <ErrorMessage message={fetchError} />}
+        {isLoading && !state && <LoadingMessage label={t('integration_ksef_direct.health.loading', 'Loading...')} />}
+        {fetchError && !isLoading && <ErrorMessage label={fetchError} />}
 
         <div className="grid grid-cols-2 gap-3 mt-2 mb-6">
           <Link href="/backend/integration-ksef-direct/documents">
@@ -158,8 +158,8 @@ export default function KsefDirectPage() {
 
             {state.status === 'error' && state.error && (
               <ErrorMessage
-                message={state.error}
-                detail={state.errorCode}
+                label={state.error}
+                description={state.errorCode}
               />
             )}
 
