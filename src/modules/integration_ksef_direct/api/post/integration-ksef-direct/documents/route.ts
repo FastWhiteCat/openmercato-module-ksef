@@ -5,8 +5,8 @@ import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import { readJsonSafe } from '@open-mercato/shared/lib/http/readJsonSafe'
 import { validateCrudMutationGuard, runCrudMutationGuardAfterSuccess } from '@open-mercato/shared/lib/crud/mutation-guard'
-import { CreateKsefDirectDocumentSchema } from '../../../data/validators'
-import { createKsefDirectDocument, KsefDirectNotConfiguredError } from '../../../commands/create-ksef-direct-document'
+import { CreateKsefDirectDocumentSchema } from '../../../../data/validators'
+import { createKsefDirectDocument, KsefDirectNotConfiguredError } from '../../../../commands/create-ksef-direct-document'
 
 export const metadata = {
   path: '/integration-ksef-direct/documents',
