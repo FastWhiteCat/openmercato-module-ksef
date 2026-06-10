@@ -77,7 +77,7 @@ export const openApi: OpenApiRouteDoc = {
             vatAmount: z.string(),
             grossAmount: z.string(),
             currency: z.string(),
-            lineItems: z.array(z.record(z.unknown())),
+            lineItems: z.array(z.record(z.string(), z.unknown())),
             notes: z.string().nullable(),
             ksefReferenceNumber: z.string().nullable(),
             errorMessage: z.string().nullable(),
