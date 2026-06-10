@@ -7,7 +7,7 @@ export const integration: IntegrationDefinition = {
   category: 'fiscal',
   providerKey: 'ksef_direct',
   icon: 'file-text',
-  package: '@fwc/om-integration-ksef-direct',
+  package: '@fast-white-cat/integration-ksef-direct',
   version: '0.1.0',
   author: 'FastWhiteCat',
   company: 'FastWhiteCat',
