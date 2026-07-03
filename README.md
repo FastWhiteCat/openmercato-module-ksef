@@ -1,4 +1,4 @@
-# @fast-white-cat/integration-ksef-direct
+# @fastwhitecat/integration-ksef-direct
 
 OpenMercato module for direct integration with the Polish National e-Invoice System ([KSeF](https://ksef.mf.gov.pl)) via the official Ministry of Finance REST API v2 — no third-party middleware required.
 
@@ -18,7 +18,7 @@ OpenMercato module for direct integration with the Polish National e-Invoice Sys
 ## Installation
 
 ```bash
-npx mercato add @fast-white-cat/integration-ksef-direct
+npx mercato add @fastwhitecat/integration-ksef-direct
 ```
 
 ## Configuration
