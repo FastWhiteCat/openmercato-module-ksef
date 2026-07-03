@@ -12,13 +12,41 @@ OpenMercato module for direct integration with the Polish National e-Invoice Sys
 
 ## Requirements
 
-- OpenMercato `>=0.6.2 <0.7.0`
+- OpenMercato `>=0.6.4 <0.7.0`
+- The `integrations` module enabled in your app
 - KSeF token and NIP (Tax Identification Number)
 
 ## Installation
 
+This is a third-party module, so install it with your package manager — the built-in
+`mercato module add` command only accepts official `@open-mercato/*` packages.
+
+**1. Add the package to your app**
+
 ```bash
-npx mercato add @fastwhitecat/integration-ksef-direct
+npm install @fastwhitecat/integration-ksef-direct
+# or, in a yarn-workspaces monorepo:
+yarn workspace <your-app> add @fastwhitecat/integration-ksef-direct
+```
+
+> If your app is still on `awilix@12`, npm may report an `ERESOLVE` peer conflict.
+> Install with `--legacy-peer-deps` to proceed — the module only uses the stable
+> `asValue` API, so it works with awilix 12 and 13 alike.
+
+**2. Register the module in your app's `modules.ts`**
+
+```ts
+export default [
+  // ...existing modules
+  { id: 'integration_ksef_direct', from: '@fastwhitecat/integration-ksef-direct' },
+]
+```
+
+**3. Generate module artifacts and run migrations**
+
+```bash
+npx mercato generate all
+npx mercato db migrate
 ```
 
 ## Configuration
