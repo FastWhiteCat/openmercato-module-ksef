@@ -23,8 +23,10 @@ jobs:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
-      # Trusted publishing (OIDC) requires npm >= 11.5.1
-      - run: npm install -g npm@latest
+      # Node 24 already bundles npm >= 11.5.1, which trusted publishing (OIDC) needs.
+      # Do NOT `npm i -g npm@latest`: it clobbers the bundled npm and breaks
+      # `npm publish` with "Cannot find module 'sigstore'".
+      - run: npm --version
 
       - run: npm ci
 
