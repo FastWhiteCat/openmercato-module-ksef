@@ -7,3 +7,5 @@ export const features = [
   { id: 'integration_ksef_direct.received_documents.view', title: 'View KSeF Direct received documents', module: 'integration_ksef_direct' },
   { id: 'integration_ksef_direct.received_documents.sync', title: 'Sync KSeF Direct received documents', module: 'integration_ksef_direct' },
 ]
+
+export default features

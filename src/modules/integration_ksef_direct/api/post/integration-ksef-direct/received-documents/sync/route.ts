@@ -84,3 +84,5 @@ export const openApi: OpenApiRouteDoc = {
     },
   },
 }
+
+export default POST

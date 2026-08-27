@@ -67,4 +67,35 @@ await esbuild.build({
   plugins: [addJsExtension],
 })
 
+// Bundlers (Turbopack in particular) don't reliably match extensionless,
+// multi-segment subpaths against wildcard "exports" patterns like "./*",
+// even though Node's own resolver does. Consumers (the OpenMercato module
+// generator) import every file by its extensionless bare path, so we
+// generate one literal exports entry per real source file instead of
+// relying on wildcards — the same approach @open-mercato/core itself uses.
+const sourceFiles = await glob('src/**/*.{ts,tsx,json}', {
+  cwd: __dirname,
+  ignore: ['**/__tests__/**', '**/*.test.ts', '**/*.test.tsx', '**/__integration__/**', '**/scripts/**', '**/*.d.ts'],
+})
+
+const exportsMap = { '.': './dist/index.js' }
+for (const file of sourceFiles.sort()) {
+  const rel = file.slice('src/'.length)
+  if (rel.endsWith('.json')) {
+    exportsMap[`./${rel}`] = `./src/${rel}`
+    continue
+  }
+  const noExt = rel.replace(/\.tsx?$/, '')
+  exportsMap[`./${noExt}`] = {
+    types: `./src/${rel}`,
+    default: `./dist/${noExt}.js`,
+  }
+}
+
+const pkgPath = join(__dirname, 'package.json')
+const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
+pkg.exports = exportsMap
+writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
+
+console.log(`Generated ${Object.keys(exportsMap).length} explicit exports entries`)
 console.log('integration-ksef-direct built successfully')
