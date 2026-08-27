@@ -43,7 +43,21 @@ yarn workspace <your-app> add @fastwhitecat/integration-ksef-direct
 > `bullmq-otel` to `^2.0.0`, or use `--legacy-peer-deps`. Worth reporting upstream to
 > `open-mercato/open-mercato`.
 
-**2. Register the module in your app's `modules.ts`**
+**2. Add the package to your app's `transpilePackages` in `next.config.ts`**
+
+```ts
+transpilePackages: [
+  // ...your existing @open-mercato/* entries
+  '@fastwhitecat/integration-ksef-direct',
+],
+```
+
+Required — this module ships TypeScript in `src/` the same way `@open-mercato/core`/`@open-mercato/ui`
+do, and Next.js does not process `node_modules` packages by default. Without this, builds fail with
+`Module not found` errors for this module's routes even though the package resolves fine outside the
+bundler.
+
+**3. Register the module in your app's `modules.ts`**
 
 ```ts
 export default [
@@ -52,7 +66,7 @@ export default [
 ]
 ```
 
-**3. Generate module artifacts and run migrations**
+**4. Generate module artifacts and run migrations**
 
 ```bash
 npx mercato generate all
