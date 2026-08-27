@@ -88,6 +88,9 @@
     "typescript": "^5.9.3",
     "zod": "^4.4.3"
   },
+  "overrides": {
+    "bullmq-otel": "^2.0.0"
+  },
   "open-mercato": {
     "displayName": "KSeF Direct Integration",
     "ejectable": true,
