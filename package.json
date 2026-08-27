@@ -11,179 +11,21 @@
   },
   "exports": {
     ".": "./dist/index.js",
-    "./index": {
-      "types": "./src/index.ts",
-      "default": "./dist/index.js"
+    "./*.ts": {
+      "types": "./src/*.ts",
+      "default": "./dist/*.js"
     },
-    "./modules/integration_ksef_direct/acl": {
-      "types": "./src/modules/integration_ksef_direct/acl.ts",
-      "default": "./dist/modules/integration_ksef_direct/acl.js"
+    "./*.tsx": {
+      "types": "./src/*.tsx",
+      "default": "./dist/*.js"
     },
-    "./modules/integration_ksef_direct/api/get/integration-ksef-direct/documents/[id]/route": {
-      "types": "./src/modules/integration_ksef_direct/api/get/integration-ksef-direct/documents/[id]/route.ts",
-      "default": "./dist/modules/integration_ksef_direct/api/get/integration-ksef-direct/documents/[id]/route.js"
-    },
-    "./modules/integration_ksef_direct/api/get/integration-ksef-direct/documents/route": {
-      "types": "./src/modules/integration_ksef_direct/api/get/integration-ksef-direct/documents/route.ts",
-      "default": "./dist/modules/integration_ksef_direct/api/get/integration-ksef-direct/documents/route.js"
-    },
-    "./modules/integration_ksef_direct/api/get/integration-ksef-direct/health": {
-      "types": "./src/modules/integration_ksef_direct/api/get/integration-ksef-direct/health.ts",
-      "default": "./dist/modules/integration_ksef_direct/api/get/integration-ksef-direct/health.js"
-    },
-    "./modules/integration_ksef_direct/api/get/integration-ksef-direct/received-documents/[id]/route": {
-      "types": "./src/modules/integration_ksef_direct/api/get/integration-ksef-direct/received-documents/[id]/route.ts",
-      "default": "./dist/modules/integration_ksef_direct/api/get/integration-ksef-direct/received-documents/[id]/route.js"
-    },
-    "./modules/integration_ksef_direct/api/get/integration-ksef-direct/received-documents/route": {
-      "types": "./src/modules/integration_ksef_direct/api/get/integration-ksef-direct/received-documents/route.ts",
-      "default": "./dist/modules/integration_ksef_direct/api/get/integration-ksef-direct/received-documents/route.js"
-    },
-    "./modules/integration_ksef_direct/api/get/integration-ksef-direct/seller-info": {
-      "types": "./src/modules/integration_ksef_direct/api/get/integration-ksef-direct/seller-info.ts",
-      "default": "./dist/modules/integration_ksef_direct/api/get/integration-ksef-direct/seller-info.js"
-    },
-    "./modules/integration_ksef_direct/api/post/integration-ksef-direct/documents/[id]/send/route": {
-      "types": "./src/modules/integration_ksef_direct/api/post/integration-ksef-direct/documents/[id]/send/route.ts",
-      "default": "./dist/modules/integration_ksef_direct/api/post/integration-ksef-direct/documents/[id]/send/route.js"
-    },
-    "./modules/integration_ksef_direct/api/post/integration-ksef-direct/documents/route": {
-      "types": "./src/modules/integration_ksef_direct/api/post/integration-ksef-direct/documents/route.ts",
-      "default": "./dist/modules/integration_ksef_direct/api/post/integration-ksef-direct/documents/route.js"
-    },
-    "./modules/integration_ksef_direct/api/post/integration-ksef-direct/invoice-numbers": {
-      "types": "./src/modules/integration_ksef_direct/api/post/integration-ksef-direct/invoice-numbers.ts",
-      "default": "./dist/modules/integration_ksef_direct/api/post/integration-ksef-direct/invoice-numbers.js"
-    },
-    "./modules/integration_ksef_direct/api/post/integration-ksef-direct/received-documents/fetch/route": {
-      "types": "./src/modules/integration_ksef_direct/api/post/integration-ksef-direct/received-documents/fetch/route.ts",
-      "default": "./dist/modules/integration_ksef_direct/api/post/integration-ksef-direct/received-documents/fetch/route.js"
-    },
-    "./modules/integration_ksef_direct/api/post/integration-ksef-direct/received-documents/sync/route": {
-      "types": "./src/modules/integration_ksef_direct/api/post/integration-ksef-direct/received-documents/sync/route.ts",
-      "default": "./dist/modules/integration_ksef_direct/api/post/integration-ksef-direct/received-documents/sync/route.js"
-    },
-    "./modules/integration_ksef_direct/backend/integration-ksef-direct/documents/new/page.meta": {
-      "types": "./src/modules/integration_ksef_direct/backend/integration-ksef-direct/documents/new/page.meta.ts",
-      "default": "./dist/modules/integration_ksef_direct/backend/integration-ksef-direct/documents/new/page.meta.js"
-    },
-    "./modules/integration_ksef_direct/backend/integration-ksef-direct/documents/new/page": {
-      "types": "./src/modules/integration_ksef_direct/backend/integration-ksef-direct/documents/new/page.tsx",
-      "default": "./dist/modules/integration_ksef_direct/backend/integration-ksef-direct/documents/new/page.js"
-    },
-    "./modules/integration_ksef_direct/backend/integration-ksef-direct/documents/page": {
-      "types": "./src/modules/integration_ksef_direct/backend/integration-ksef-direct/documents/page.tsx",
-      "default": "./dist/modules/integration_ksef_direct/backend/integration-ksef-direct/documents/page.js"
-    },
-    "./modules/integration_ksef_direct/backend/integration-ksef-direct/received-documents/page": {
-      "types": "./src/modules/integration_ksef_direct/backend/integration-ksef-direct/received-documents/page.tsx",
-      "default": "./dist/modules/integration_ksef_direct/backend/integration-ksef-direct/received-documents/page.js"
-    },
-    "./modules/integration_ksef_direct/backend/page": {
-      "types": "./src/modules/integration_ksef_direct/backend/page.tsx",
-      "default": "./dist/modules/integration_ksef_direct/backend/page.js"
-    },
-    "./modules/integration_ksef_direct/commands/create-ksef-direct-document": {
-      "types": "./src/modules/integration_ksef_direct/commands/create-ksef-direct-document.ts",
-      "default": "./dist/modules/integration_ksef_direct/commands/create-ksef-direct-document.js"
-    },
-    "./modules/integration_ksef_direct/commands/enqueue-ksef-direct-document": {
-      "types": "./src/modules/integration_ksef_direct/commands/enqueue-ksef-direct-document.ts",
-      "default": "./dist/modules/integration_ksef_direct/commands/enqueue-ksef-direct-document.js"
-    },
-    "./modules/integration_ksef_direct/data/entities": {
-      "types": "./src/modules/integration_ksef_direct/data/entities.ts",
-      "default": "./dist/modules/integration_ksef_direct/data/entities.js"
-    },
-    "./modules/integration_ksef_direct/data/validators": {
-      "types": "./src/modules/integration_ksef_direct/data/validators.ts",
-      "default": "./dist/modules/integration_ksef_direct/data/validators.js"
-    },
-    "./modules/integration_ksef_direct/di": {
-      "types": "./src/modules/integration_ksef_direct/di.ts",
-      "default": "./dist/modules/integration_ksef_direct/di.js"
-    },
-    "./modules/integration_ksef_direct/events": {
-      "types": "./src/modules/integration_ksef_direct/events.ts",
-      "default": "./dist/modules/integration_ksef_direct/events.js"
-    },
-    "./modules/integration_ksef_direct/i18n/en.json": "./src/modules/integration_ksef_direct/i18n/en.json",
-    "./modules/integration_ksef_direct/i18n/pl.json": "./src/modules/integration_ksef_direct/i18n/pl.json",
-    "./modules/integration_ksef_direct/index": {
-      "types": "./src/modules/integration_ksef_direct/index.ts",
-      "default": "./dist/modules/integration_ksef_direct/index.js"
-    },
-    "./modules/integration_ksef_direct/integration": {
-      "types": "./src/modules/integration_ksef_direct/integration.ts",
-      "default": "./dist/modules/integration_ksef_direct/integration.js"
-    },
-    "./modules/integration_ksef_direct/lib/health": {
-      "types": "./src/modules/integration_ksef_direct/lib/health.ts",
-      "default": "./dist/modules/integration_ksef_direct/lib/health.js"
-    },
-    "./modules/integration_ksef_direct/lib/invoiceNumberFormat": {
-      "types": "./src/modules/integration_ksef_direct/lib/invoiceNumberFormat.ts",
-      "default": "./dist/modules/integration_ksef_direct/lib/invoiceNumberFormat.js"
-    },
-    "./modules/integration_ksef_direct/lib/ksefClient": {
-      "types": "./src/modules/integration_ksef_direct/lib/ksefClient.ts",
-      "default": "./dist/modules/integration_ksef_direct/lib/ksefClient.js"
-    },
-    "./modules/integration_ksef_direct/lib/ksefCrypto": {
-      "types": "./src/modules/integration_ksef_direct/lib/ksefCrypto.ts",
-      "default": "./dist/modules/integration_ksef_direct/lib/ksefCrypto.js"
-    },
-    "./modules/integration_ksef_direct/lib/ksefFa2Xml": {
-      "types": "./src/modules/integration_ksef_direct/lib/ksefFa2Xml.ts",
-      "default": "./dist/modules/integration_ksef_direct/lib/ksefFa2Xml.js"
-    },
-    "./modules/integration_ksef_direct/lib/ksefXmlParser": {
-      "types": "./src/modules/integration_ksef_direct/lib/ksefXmlParser.ts",
-      "default": "./dist/modules/integration_ksef_direct/lib/ksefXmlParser.js"
-    },
-    "./modules/integration_ksef_direct/migrations/Migration20260519210000_integration_ksef_direct": {
-      "types": "./src/modules/integration_ksef_direct/migrations/Migration20260519210000_integration_ksef_direct.ts",
-      "default": "./dist/modules/integration_ksef_direct/migrations/Migration20260519210000_integration_ksef_direct.js"
-    },
-    "./modules/integration_ksef_direct/migrations/Migration20260520120000_ksef_direct_documents": {
-      "types": "./src/modules/integration_ksef_direct/migrations/Migration20260520120000_ksef_direct_documents.ts",
-      "default": "./dist/modules/integration_ksef_direct/migrations/Migration20260520120000_ksef_direct_documents.js"
-    },
-    "./modules/integration_ksef_direct/migrations/Migration20260520220000_ksef_direct_send_queue": {
-      "types": "./src/modules/integration_ksef_direct/migrations/Migration20260520220000_ksef_direct_send_queue.ts",
-      "default": "./dist/modules/integration_ksef_direct/migrations/Migration20260520220000_ksef_direct_send_queue.js"
-    },
-    "./modules/integration_ksef_direct/migrations/Migration20260520230000_ksef_direct_seller_per_document": {
-      "types": "./src/modules/integration_ksef_direct/migrations/Migration20260520230000_ksef_direct_seller_per_document.ts",
-      "default": "./dist/modules/integration_ksef_direct/migrations/Migration20260520230000_ksef_direct_seller_per_document.js"
-    },
-    "./modules/integration_ksef_direct/migrations/Migration20260521120000_ksef_direct_received_documents": {
-      "types": "./src/modules/integration_ksef_direct/migrations/Migration20260521120000_ksef_direct_received_documents.ts",
-      "default": "./dist/modules/integration_ksef_direct/migrations/Migration20260521120000_ksef_direct_received_documents.js"
-    },
-    "./modules/integration_ksef_direct/migrations/Migration20260521130000_ksef_received_download_urls": {
-      "types": "./src/modules/integration_ksef_direct/migrations/Migration20260521130000_ksef_received_download_urls.ts",
-      "default": "./dist/modules/integration_ksef_direct/migrations/Migration20260521130000_ksef_received_download_urls.js"
-    },
-    "./modules/integration_ksef_direct/setup": {
-      "types": "./src/modules/integration_ksef_direct/setup.ts",
-      "default": "./dist/modules/integration_ksef_direct/setup.js"
-    },
-    "./modules/integration_ksef_direct/subscribers/auto-enqueue-ksef-document": {
-      "types": "./src/modules/integration_ksef_direct/subscribers/auto-enqueue-ksef-document.ts",
-      "default": "./dist/modules/integration_ksef_direct/subscribers/auto-enqueue-ksef-document.js"
-    },
-    "./modules/integration_ksef_direct/workers/check-ksef-document-status": {
-      "types": "./src/modules/integration_ksef_direct/workers/check-ksef-document-status.ts",
-      "default": "./dist/modules/integration_ksef_direct/workers/check-ksef-document-status.js"
-    },
-    "./modules/integration_ksef_direct/workers/send-ksef-document": {
-      "types": "./src/modules/integration_ksef_direct/workers/send-ksef-document.ts",
-      "default": "./dist/modules/integration_ksef_direct/workers/send-ksef-document.js"
-    },
-    "./modules/integration_ksef_direct/workers/sync-received-documents": {
-      "types": "./src/modules/integration_ksef_direct/workers/sync-received-documents.ts",
-      "default": "./dist/modules/integration_ksef_direct/workers/sync-received-documents.js"
+    "./*.json": "./src/*.json",
+    "./*": {
+      "types": [
+        "./src/*.ts",
+        "./src/*.tsx"
+      ],
+      "default": "./dist/*.js"
     }
   },
   "peerDependencies": {
