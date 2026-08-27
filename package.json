@@ -89,7 +89,9 @@
     "zod": "^4.4.3"
   },
   "overrides": {
-    "bullmq-otel": "^2.0.0"
+    "@open-mercato/queue": {
+      "bullmq-otel": "^2.0.0"
+    }
   },
   "open-mercato": {
     "displayName": "KSeF Direct Integration",
