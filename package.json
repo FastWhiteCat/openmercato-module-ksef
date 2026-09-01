@@ -3,6 +3,10 @@
   "version": "0.1.6",
   "type": "module",
   "main": "./dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FastWhiteCat/openmercato-module-ksef.git"
+  },
   "scripts": {
     "build": "node build.mjs",
     "watch": "node watch.mjs",
