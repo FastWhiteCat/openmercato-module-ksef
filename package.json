@@ -1,8 +1,12 @@
 {
   "name": "@fastwhitecat/integration-ksef-direct",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "type": "module",
   "main": "./dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FastWhiteCat/openmercato-module-ksef.git"
+  },
   "scripts": {
     "build": "node build.mjs",
     "watch": "node watch.mjs",
