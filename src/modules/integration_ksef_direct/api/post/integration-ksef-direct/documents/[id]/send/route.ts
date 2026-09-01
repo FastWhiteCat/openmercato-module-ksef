@@ -7,7 +7,7 @@ import {
   enqueueKsefDirectDocument,
   KsefDocumentNotFoundError,
   KsefDocumentNotQueueableError,
-} from '../../../../../commands/enqueue-ksef-direct-document'
+} from '../../../../../../commands/enqueue-ksef-direct-document'
 
 export const metadata = {
   path: '/integration-ksef-direct/documents/[id]/send',
@@ -62,3 +62,5 @@ export const openApi: OpenApiRouteDoc = {
     },
   },
 }
+
+export default POST

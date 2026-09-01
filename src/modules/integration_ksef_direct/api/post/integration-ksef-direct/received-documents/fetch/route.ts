@@ -4,8 +4,8 @@ import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import { readJsonSafe } from '@open-mercato/shared/lib/http/readJsonSafe'
-import { ReceivedDocumentFetchSchema } from '../../../../data/validators'
-import { KsefNetworkError } from '../../../../lib/ksefClient'
+import { ReceivedDocumentFetchSchema } from '../../../../../data/validators'
+import { KsefNetworkError } from '../../../../../lib/ksefClient'
 
 export const metadata = {
   path: '/integration-ksef-direct/received-documents/fetch',
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
       })
     : null
 
-  const { KsefDirectCredentialsSchema } = await import('../../../../data/validators')
+  const { KsefDirectCredentialsSchema } = await import('../../../../../data/validators')
   const credsParsed = KsefDirectCredentialsSchema.safeParse(rawCreds)
   if (!credsParsed.success) {
     return NextResponse.json({ error: 'KSeF credentials not configured' }, { status: 409 })
@@ -65,9 +65,9 @@ export async function POST(req: Request) {
     tenantId: auth.tenantId,
   }
 
-  const { downloadInvoice } = await import('../../../../lib/ksefClient')
-  const { parseReceivedInvoiceXml } = await import('../../../../lib/ksefXmlParser')
-  const { KsefDirectReceivedDocument } = await import('../../../../data/entities')
+  const { downloadInvoice } = await import('../../../../../lib/ksefClient')
+  const { parseReceivedInvoiceXml } = await import('../../../../../lib/ksefXmlParser')
+  const { KsefDirectReceivedDocument } = await import('../../../../../data/entities')
 
   let rawContent: string
   let upoDownloadUrl: string | null = null
@@ -183,3 +183,5 @@ export const openApi: OpenApiRouteDoc = {
     },
   },
 }
+
+export default POST

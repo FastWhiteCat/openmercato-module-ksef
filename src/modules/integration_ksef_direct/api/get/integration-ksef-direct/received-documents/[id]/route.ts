@@ -3,7 +3,7 @@ import { z } from 'zod'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
-import { KsefDirectReceivedDocument } from '../../../../data/entities'
+import { KsefDirectReceivedDocument } from '../../../../../data/entities'
 
 export const metadata = {
   path: '/integration-ksef-direct/received-documents/[id]',
@@ -86,3 +86,5 @@ export const openApi: OpenApiRouteDoc = {
     },
   },
 }
+
+export default GET

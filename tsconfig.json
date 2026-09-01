@@ -17,7 +17,8 @@
     "emitDecoratorMetadata": true,
     "useDefineForClassFields": false,
     "typeRoots": ["./node_modules/@types"],
-    "noEmit": true
+    "noEmit": true,
+    "rootDir": "."
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/__tests__/**"]

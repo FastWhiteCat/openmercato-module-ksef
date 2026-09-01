@@ -5,8 +5,8 @@ import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
 import { readJsonSafe } from '@open-mercato/shared/lib/http/readJsonSafe'
 import { createModuleQueue } from '@open-mercato/queue'
-import { ReceivedDocumentSyncSchema } from '../../../../data/validators'
-import type { SyncReceivedDocumentsPayload } from '../../../../workers/sync-received-documents'
+import { ReceivedDocumentSyncSchema } from '../../../../../data/validators'
+import type { SyncReceivedDocumentsPayload } from '../../../../../workers/sync-received-documents'
 
 export const metadata = {
   path: '/integration-ksef-direct/received-documents/sync',
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       })
     : null
 
-  const { KsefDirectCredentialsSchema } = await import('../../../../data/validators')
+  const { KsefDirectCredentialsSchema } = await import('../../../../../data/validators')
   if (!KsefDirectCredentialsSchema.safeParse(rawCreds).success) {
     return NextResponse.json(
       { error: 'KSeF credentials not configured' },
@@ -84,3 +84,5 @@ export const openApi: OpenApiRouteDoc = {
     },
   },
 }
+
+export default POST

@@ -16,18 +16,21 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
+
+      # Node 24 already bundles npm >= 11.5.1, which trusted publishing (OIDC) needs.
+      # Do NOT `npm i -g npm@latest`: it clobbers the bundled npm and breaks
+      # `npm publish` with "Cannot find module 'sigstore'".
+      - run: npm --version
 
       - run: npm ci
 
       - run: npm run build
 
-      - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # No NODE_AUTH_TOKEN: auth happens via OIDC (trusted publisher)
+      - run: npm publish --access public

@@ -3,7 +3,7 @@ import { z } from 'zod'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
-import { KsefDirectDocument } from '../../../../data/entities'
+import { KsefDirectDocument } from '../../../../../data/entities'
 
 export const metadata = {
   path: '/integration-ksef-direct/documents/[id]',
@@ -77,7 +77,7 @@ export const openApi: OpenApiRouteDoc = {
             vatAmount: z.string(),
             grossAmount: z.string(),
             currency: z.string(),
-            lineItems: z.array(z.record(z.unknown())),
+            lineItems: z.array(z.record(z.string(), z.unknown())),
             notes: z.string().nullable(),
             ksefReferenceNumber: z.string().nullable(),
             errorMessage: z.string().nullable(),
@@ -92,3 +92,5 @@ export const openApi: OpenApiRouteDoc = {
     },
   },
 }
+
+export default GET

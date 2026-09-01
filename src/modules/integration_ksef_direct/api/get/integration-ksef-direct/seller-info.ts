@@ -60,3 +60,5 @@ export const openApi: OpenApiRouteDoc = {
     },
   },
 }
+
+export default GET

@@ -3,18 +3,17 @@ import { z } from 'zod'
 import type { OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
 import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
 import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
-import { KsefDirectDocument } from '../../../data/entities'
+import { KsefDirectReceivedDocument } from '../../../../data/entities'
 
 export const metadata = {
-  path: '/integration-ksef-direct/documents',
-  GET: { requireAuth: true, requireFeatures: ['integration_ksef_direct.documents.view'] },
+  path: '/integration-ksef-direct/received-documents',
+  GET: { requireAuth: true, requireFeatures: ['integration_ksef_direct.received_documents.view'] },
 }
 
 const querySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   pageSize: z.coerce.number().min(1).max(100).default(50),
   status: z.string().optional(),
-  source: z.string().optional(),
   search: z.string().optional(),
 })
 
@@ -40,10 +39,19 @@ export async function GET(req: Request) {
   }
 
   if (query.status) where.status = query.status
-  if (query.source) where.source = query.source
+
+  if (query.search) {
+    const pattern = `%${query.search}%`
+    where.$or = [
+      { ksefReferenceNumber: { $ilike: pattern } },
+      { invoiceNumber: { $ilike: pattern } },
+      { sellerNip: { $ilike: pattern } },
+      { sellerName: { $ilike: pattern } },
+    ]
+  }
 
   const [docs, total] = await em.findAndCount(
-    KsefDirectDocument,
+    KsefDirectReceivedDocument,
     where,
     {
       orderBy: { createdAt: 'DESC' },
@@ -52,20 +60,20 @@ export async function GET(req: Request) {
     },
   )
 
-  const items = docs.map((doc: KsefDirectDocument) => ({
+  const items = docs.map((doc: KsefDirectReceivedDocument) => ({
     id: doc.id,
-    source: doc.source,
+    ksefReferenceNumber: doc.ksefReferenceNumber,
+    invoiceNumber: doc.invoiceNumber ?? null,
+    sellerNip: doc.sellerNip ?? null,
+    sellerName: doc.sellerName ?? null,
+    issueDate: doc.issueDate ?? null,
+    currency: doc.currency ?? null,
+    netAmount: doc.netAmount ?? null,
+    vatAmount: doc.vatAmount ?? null,
+    grossAmount: doc.grossAmount ?? null,
     status: doc.status,
-    invoiceNumber: doc.invoiceNumber,
-    buyerNip: doc.buyerNip,
-    buyerName: doc.buyerName ?? null,
-    issueDate: doc.issueDate.toISOString().split('T')[0],
-    sellerNip: doc.sellerNip,
-    netAmount: doc.netAmount,
-    vatAmount: doc.vatAmount,
-    grossAmount: doc.grossAmount,
-    currency: doc.currency,
-    ksefReferenceNumber: doc.ksefReferenceNumber ?? null,
+    errorMessage: doc.errorMessage ?? null,
+    syncedAt: doc.syncedAt?.toISOString() ?? null,
     createdAt: doc.createdAt.toISOString(),
   }))
 
@@ -74,11 +82,11 @@ export async function GET(req: Request) {
 
 export const openApi: OpenApiRouteDoc = {
   tag: 'KSeF Direct',
-  summary: 'List KSeF Direct documents',
+  summary: 'List received KSeF documents',
   methods: {
     GET: {
-      summary: 'List KSeF Direct documents',
-      description: 'Returns a paginated list of KSeF Direct document records for the current organization.',
+      summary: 'List received KSeF documents',
+      description: 'Returns a paginated list of received KSeF document records for the current organization.',
       responses: [
         {
           status: 200,
@@ -86,18 +94,18 @@ export const openApi: OpenApiRouteDoc = {
           schema: z.object({
             items: z.array(z.object({
               id: z.string().uuid(),
-              source: z.string(),
+              ksefReferenceNumber: z.string(),
+              invoiceNumber: z.string().nullable(),
+              sellerNip: z.string().nullable(),
+              sellerName: z.string().nullable(),
+              issueDate: z.string().nullable(),
+              currency: z.string().nullable(),
+              netAmount: z.string().nullable(),
+              vatAmount: z.string().nullable(),
+              grossAmount: z.string().nullable(),
               status: z.string(),
-              invoiceNumber: z.string(),
-              buyerNip: z.string(),
-              buyerName: z.string().nullable(),
-              issueDate: z.string(),
-              sellerNip: z.string(),
-              netAmount: z.string(),
-              vatAmount: z.string(),
-              grossAmount: z.string(),
-              currency: z.string(),
-              ksefReferenceNumber: z.string().nullable(),
+              errorMessage: z.string().nullable(),
+              syncedAt: z.string().nullable(),
               createdAt: z.string(),
             })),
             total: z.number(),
@@ -109,3 +117,5 @@ export const openApi: OpenApiRouteDoc = {
     },
   },
 }
+
+export default GET
