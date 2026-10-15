@@ -11,7 +11,7 @@ export const integration: IntegrationDefinition = {
   version: '0.1.0',
   author: 'FastWhiteCat',
   company: 'FastWhiteCat',
-  license: 'PROPRIETARY',
+  license: 'MIT',
   tags: ['ksef', 'e-invoicing', 'poland', 'fiscal', 'tax-compliance', 'direct'],
   credentials: {
     fields: [

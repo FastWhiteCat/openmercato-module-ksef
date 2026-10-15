@@ -1,6 +1,7 @@
 {
   "name": "@fastwhitecat/integration-ksef-direct",
-  "version": "0.1.7",
+  "version": "0.1.8",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "repository": {

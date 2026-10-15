@@ -85,4 +85,4 @@ After installation, go to **Settings → Integrations → KSeF Direct** and prov
 
 ## License
 
-Proprietary — © FastWhiteCat
+[MIT](./LICENSE)
