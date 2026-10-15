@@ -8,7 +8,7 @@ export const integration: IntegrationDefinition = {
   providerKey: 'ksef_direct',
   icon: 'file-text',
   package: '@fastwhitecat/integration-ksef-direct',
-  version: '0.1.0',
+  version: '0.1.8',
   author: 'FastWhiteCat',
   company: 'FastWhiteCat',
   license: 'MIT',
